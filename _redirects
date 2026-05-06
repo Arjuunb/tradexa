@@ -1,0 +1,14 @@
+# Cloudflare Pages / Netlify _redirects.
+#
+# Tradexa serves directories with index.html (e.g. /pricing/, /product/, /app/dashboard.html)
+# directly — no redirect rules needed for the static site.
+#
+# /api/* is the only platform-specific path: on Vercel it routes to api/*.py.
+# On Netlify/Cloudflare Pages, Python serverless isn't native — uncomment ONE
+# of the proxy lines below after deploying api/* to a Python host
+# (Vercel project, Railway, Render, Fly.io, etc) and setting the host.
+
+# /api/*  https://YOUR-PYTHON-API-HOST/api/:splat  200
+
+# 404 fallback (let the host's default 404 page handle this; no SPA rewrite
+# because Tradexa is true multi-page).

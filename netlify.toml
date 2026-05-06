@@ -1,0 +1,42 @@
+## Tradexa — Netlify configuration
+##
+## NOTE on /api/*: Tradexa's serverless endpoints are Python (Vercel @vercel/python).
+## Netlify Functions don't run Python natively. To deploy on Netlify, either:
+##   (a) Keep /api/*.py running on Vercel (or Railway/Render) and proxy from Netlify
+##       — uncomment the `[[redirects]]` block below and set TRADEXA_API_HOST.
+##   (b) Port api/*.py to Netlify Functions in JavaScript.
+## See docs/README.md → "Deployment" for details.
+
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://generativelanguage.googleapis.com https://*.supabase.co wss://*.supabase.co; frame-src 'self' https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+    Cross-Origin-Opener-Policy = "same-origin-allow-popups"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-store, no-cache"
+    X-Content-Type-Options = "nosniff"
+
+## Uncomment + set TRADEXA_API_HOST to proxy /api/* to your Python backend
+## (Vercel deployment, Railway, Render, etc).
+# [[redirects]]
+#   from = "/api/*"
+#   to = "https://YOUR-PYTHON-API-HOST/api/:splat"
+#   status = 200
+#   force = true

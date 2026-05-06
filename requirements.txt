@@ -1,0 +1,3 @@
+# Backend deps for Vercel/Hostinger Python runtime.
+# Auth removed; endpoints rely only on stdlib (http.server, json, os, urllib).
+# No third-party deps required.
