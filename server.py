@@ -193,13 +193,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        if not self._is_origin_allowed():
-            self.send_response(403)
-            self.end_headers()
-            return
         path = self.path.split('?')[0]
-        if path == '/api/public-config':
-            self._handle_public_config(); return
+        if path.startswith('/api/'):
+            if not self._is_origin_allowed():
+                self.send_response(403)
+                self.end_headers()
+                return
+            if path == '/api/public-config':
+                self._handle_public_config(); return
         return super().do_GET()
 
     def do_POST(self):
