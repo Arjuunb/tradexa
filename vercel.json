@@ -1,24 +1,23 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "api/public-config.py", "use": "@vercel/python" },
-    { "src": "api/health.py",        "use": "@vercel/python" },
-    { "src": "api/me.py",            "use": "@vercel/python" },
-    { "src": "api/not_found.py",     "use": "@vercel/python" },
-    { "src": "auth/*.html",          "use": "@vercel/static" },
-    { "src": "assets/*",             "use": "@vercel/static" },
-    { "src": "*.html",               "use": "@vercel/static" },
-    { "src": "*.ico",                "use": "@vercel/static" },
-    { "src": "*.txt",                "use": "@vercel/static" },
-    { "src": "*.xml",                "use": "@vercel/static" },
-    { "src": "*.png",                "use": "@vercel/static" },
-    { "src": "*.webmanifest",        "use": "@vercel/static" }
-  ],
-  "routes": [
-    { "src": "/api/public-config", "dest": "/api/public-config.py" },
-    { "src": "/api/health",        "dest": "/api/health.py" },
-    { "src": "/api/me",            "dest": "/api/me.py" },
-    { "src": "/",                  "dest": "/index.html" },
-    { "src": "/(.+)",              "dest": "/$1" }
+  "functions": {
+    "api/*.py": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
+    }
   ]
 }
