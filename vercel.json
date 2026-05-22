@@ -6,6 +6,14 @@
       "maxDuration": 30
     }
   },
+  "routes": [
+    {
+      "src":  "/api/public-config",
+      "dest": "/api/public-config.py",
+      "methods": ["GET", "OPTIONS"],
+      "headers": { "Cache-Control": "public, max-age=300" }
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
