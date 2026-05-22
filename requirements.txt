@@ -1,3 +1,4 @@
-# Backend deps for Vercel/Hostinger Python runtime.
-# Auth removed; endpoints rely only on stdlib (http.server, json, os, urllib).
-# No third-party deps required.
+# Vercel Python runtime marker — handlers use stdlib only.
+# This file must contain at least one dependency for Vercel to detect
+# the Python runtime and pick up api/*.py as serverless functions.
+requests==2.31.0
