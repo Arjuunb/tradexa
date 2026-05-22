@@ -5,6 +5,7 @@ import time
 import hmac
 import hashlib
 import base64
+import urllib.request
 
 SUPABASE_URL        = os.environ.get('SUPABASE_URL', '')
 SUPABASE_ANON_KEY   = os.environ.get('SUPABASE_ANON_KEY', '')
@@ -22,29 +23,47 @@ def _b64url_decode(s):
     return base64.urlsafe_b64decode(s)
 
 
-def verify_supabase_jwt(headers):
-    """Verify HS256 Supabase JWT. Returns payload on success, None on failure."""
-    if not SUPABASE_JWT_SECRET:
+def _decode_jwt_payload(token):
+    """Decode JWT payload without verifying signature — used after Supabase confirms token."""
+    try:
+        parts = token.split('.')
+        if len(parts) != 3:
+            return None
+        return json.loads(_b64url_decode(parts[1]))
+    except Exception:
         return None
+
+
+def verify_supabase_jwt(headers):
+    """Verify token by calling Supabase /auth/v1/user.
+    Works with all signing algorithms (HS256, ECC P-256, etc).
+    Returns payload dict on success, None on failure."""
     auth = headers.get('Authorization') or headers.get('authorization') or ''
     if not auth.startswith('Bearer '):
         return None
     token = auth[7:].strip()
+    if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+        return None
     try:
-        h_b64, p_b64, sig_b64 = token.split('.')
-        msg = (h_b64 + '.' + p_b64).encode('ascii')
-        expected = hmac.new(SUPABASE_JWT_SECRET.encode('utf-8'), msg, hashlib.sha256).digest()
-        actual = _b64url_decode(sig_b64)
-        if not hmac.compare_digest(expected, actual):
+        req = urllib.request.Request(
+            f'{SUPABASE_URL}/auth/v1/user',
+            headers={
+                'Authorization': f'Bearer {token}',
+                'apikey': SUPABASE_ANON_KEY,
+            },
+            method='GET',
+        )
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            user = json.loads(resp.read().decode('utf-8'))
+        if not user.get('id'):
             return None
-        if json.loads(_b64url_decode(h_b64)).get('alg') != 'HS256':
-            return None
-        payload = json.loads(_b64url_decode(p_b64))
-        if payload.get('exp', 0) < (time.time() - 5):
-            return None
-        if payload.get('aud') and payload.get('aud') != 'authenticated':
-            return None
-        return payload
+        # Return a payload-like dict so callers can use payload.get('email') etc.
+        return {
+            'sub':   user.get('id'),
+            'email': user.get('email', ''),
+            'role':  user.get('role', 'authenticated'),
+            'aud':   'authenticated',
+        }
     except Exception:
         return None
 
@@ -87,8 +106,8 @@ def is_admin(payload):
 
 def auth_or_401(h):
     """Returns JWT payload if valid, writes 401 and returns None otherwise."""
-    if not SUPABASE_JWT_SECRET:
-        json_error(h, 503, 'SUPABASE_JWT_SECRET is not set on the server. Add it to Vercel environment variables.')
+    if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+        json_error(h, 503, 'SUPABASE_URL or SUPABASE_ANON_KEY not set on the server.')
         return None
     auth = h.headers.get('Authorization') or h.headers.get('authorization') or ''
     if not auth.startswith('Bearer '):
