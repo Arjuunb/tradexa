@@ -3,7 +3,7 @@ from http.server import BaseHTTPRequestHandler
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _shared import json_response, json_error, set_cors, auth_or_401, is_admin, ADMIN_EMAIL
+from _shared import json_response, set_cors, auth_or_401, is_admin
 
 
 class handler(BaseHTTPRequestHandler):
