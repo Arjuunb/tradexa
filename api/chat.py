@@ -5,7 +5,7 @@ import urllib.request
 import urllib.error
 import sys
 import os
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _shared import (
     GEMINI_API_KEY, GEMINI_URL, GEMINI_STREAM_URL,
     json_response, json_error, read_json_body, auth_or_401, set_cors,

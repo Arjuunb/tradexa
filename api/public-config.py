@@ -2,9 +2,6 @@
 from http.server import BaseHTTPRequestHandler
 import json
 import os
-import sys
-import os as _os
-sys.path.insert(0, _os.path.dirname(__file__))
 
 
 class handler(BaseHTTPRequestHandler):
@@ -16,8 +13,8 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        supabase_url     = os.environ.get('SUPABASE_URL', '')
-        supabase_anon    = os.environ.get('SUPABASE_ANON_KEY', '')
+        supabase_url  = os.environ.get('SUPABASE_URL', '')
+        supabase_anon = os.environ.get('SUPABASE_ANON_KEY', '')
         body = json.dumps({
             'supabaseUrl':     supabase_url,
             'supabaseAnonKey': supabase_anon,

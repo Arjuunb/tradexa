@@ -5,7 +5,7 @@ import urllib.request
 import urllib.error
 import os
 import sys
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _shared import json_response, json_error, set_cors, verify_supabase_jwt, is_admin, ADMIN_EMAIL
 
 SUPABASE_URL         = os.environ.get('SUPABASE_URL', '')
