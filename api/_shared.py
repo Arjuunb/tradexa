@@ -87,7 +87,15 @@ def is_admin(payload):
 
 def auth_or_401(h):
     """Returns JWT payload if valid, writes 401 and returns None otherwise."""
+    if not SUPABASE_JWT_SECRET:
+        json_error(h, 503, 'SUPABASE_JWT_SECRET is not set on the server. Add it to Vercel environment variables.')
+        return None
+    auth = h.headers.get('Authorization') or h.headers.get('authorization') or ''
+    if not auth.startswith('Bearer '):
+        json_error(h, 401, 'No auth token sent. Make sure you are logged in.')
+        return None
     payload = verify_supabase_jwt(h.headers)
     if payload is None:
-        json_error(h, 401, 'Authentication required.')
+        json_error(h, 401, 'Token invalid or expired. Please sign out and sign back in.')
+        return None
     return payload
