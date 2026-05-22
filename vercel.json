@@ -1,5 +1,7 @@
 {
   "functions": {
-    "api/*.py": {}
+    "api/*.py": {
+      "maxDuration": 10
+    }
   }
 }
