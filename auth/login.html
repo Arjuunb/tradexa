@@ -128,7 +128,7 @@
     <div class="divider">or continue with email</div>
 
     <!-- Email / password form -->
-    <form id="loginForm" novalidate>
+    <form id="loginForm" method="post" action="" novalidate>
       <div class="field">
         <label for="email">Email</label>
         <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required/>
@@ -228,12 +228,13 @@
   // If already signed in, redirect immediately
   function checkExistingSession() {
     if (!window.TxAuth) return;
-    TxAuth.ready
-      .then(function () { return TxAuth.getUser(); })
-      .then(function (user) {
-        if (user) location.replace(redirectTo);
-      })
-      .catch(function () {});
+    var p = TxAuth.ready;
+    if (!p || typeof p.then !== 'function') return;
+    p.then(function () { return TxAuth.getUser(); })
+     .then(function (user) {
+       if (user) location.replace(redirectTo);
+     })
+     .catch(function () {});
   }
 
   // Wire up TxAuth when it's ready
@@ -241,10 +242,13 @@
     buildOAuthButtons();
     checkExistingSession();
     // Check if Supabase is actually configured
-    TxAuth.ready.catch(function (err) {
-      document.getElementById('configWarn').style.display = 'block';
-      showBanner('Authentication service unavailable. ' + (err.message || ''));
-    });
+    var p = TxAuth.ready;
+    if (p && typeof p.catch === 'function') {
+      p.catch(function (err) {
+        document.getElementById('configWarn').style.display = 'block';
+        showBanner('Authentication service unavailable. ' + (err.message || ''));
+      });
+    }
   }
 
   if (window.TxAuth) {
