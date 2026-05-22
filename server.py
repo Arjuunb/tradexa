@@ -190,6 +190,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         path = self.path.split('?')[0]
         if path == '/api/public-config':
             self._handle_public_config(); return
+        if path.startswith('/api/'):
+            self.send_response(404)
+            self._set_cors()
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': 'Not found'}).encode())
+            return
         return super().do_GET()
 
     def do_POST(self):
@@ -200,6 +207,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self._handle_weekly_review()
         elif path == '/api/insights':
             self._handle_insights()
+        elif path.startswith('/api/'):
+            self.send_response(404)
+            self._set_cors()
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': 'Not found'}).encode())
         else:
             self.send_response(404)
             self._set_cors()
