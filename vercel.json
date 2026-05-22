@@ -3,12 +3,22 @@
   "builds": [
     { "src": "api/public-config.py", "use": "@vercel/python" },
     { "src": "api/health.py",        "use": "@vercel/python" },
-    { "src": "api/me.py",            "use": "@vercel/python" }
+    { "src": "api/me.py",            "use": "@vercel/python" },
+    { "src": "api/not_found.py",     "use": "@vercel/python" },
+    { "src": "auth/*.html",          "use": "@vercel/static" },
+    { "src": "assets/*",             "use": "@vercel/static" },
+    { "src": "*.html",               "use": "@vercel/static" },
+    { "src": "*.ico",                "use": "@vercel/static" },
+    { "src": "*.txt",                "use": "@vercel/static" },
+    { "src": "*.xml",                "use": "@vercel/static" },
+    { "src": "*.png",                "use": "@vercel/static" },
+    { "src": "*.webmanifest",        "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/public-config", "dest": "/api/public-config.py" },
     { "src": "/api/health",        "dest": "/api/health.py" },
     { "src": "/api/me",            "dest": "/api/me.py" },
-    { "src": "/(.*)",              "dest": "/$1" }
+    { "src": "/",                  "dest": "/index.html" },
+    { "src": "/(.+)",              "dest": "/$1" }
   ]
 }
