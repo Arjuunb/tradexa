@@ -40,8 +40,11 @@ SUPABASE_JWT_SECRET  = os.environ.get('SUPABASE_JWT_SECRET', '')
 # ──────────────────────────── Supabase JWT verify ────────────────────────────
 
 def _b64url_decode(s):
-    s += '=' * (-len(s) % 4)
-    return base64.urlsafe_b64decode(s)
+    try:
+        s += '=' * (-len(s) % 4)
+        return base64.urlsafe_b64decode(s)
+    except (ValueError, Exception):
+        return None
 
 
 def verify_supabase_jwt(headers):
@@ -54,15 +57,32 @@ def verify_supabase_jwt(headers):
         return None
     token = auth[7:].strip()
     try:
-        h_b64, p_b64, sig_b64 = token.split('.')
+        parts = token.split('.')
+        if len(parts) != 3:
+            return None
+        h_b64, p_b64, sig_b64 = parts
+
         msg = (h_b64 + '.' + p_b64).encode('ascii')
         expected = hmac.new(SUPABASE_JWT_SECRET.encode('utf-8'), msg, hashlib.sha256).digest()
         actual = _b64url_decode(sig_b64)
-        if not hmac.compare_digest(expected, actual): return None
-        if json.loads(_b64url_decode(h_b64)).get('alg') != 'HS256': return None
-        payload = json.loads(_b64url_decode(p_b64))
-        if payload.get('exp', 0) < (time.time() - 5): return None
-        if payload.get('aud') and payload.get('aud') != 'authenticated': return None
+        if actual is None or not hmac.compare_digest(expected, actual):
+            return None
+
+        header_json = _b64url_decode(h_b64)
+        if header_json is None:
+            return None
+        if json.loads(header_json).get('alg') != 'HS256':
+            return None
+
+        payload_json = _b64url_decode(p_b64)
+        if payload_json is None:
+            return None
+        payload = json.loads(payload_json)
+
+        if payload.get('exp', 0) < (time.time() - 5):
+            return None
+        if payload.get('aud') and payload.get('aud') != 'authenticated':
+            return None
         return payload
     except Exception:
         return None
@@ -190,6 +210,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         path = self.path.split('?')[0]
         if path == '/api/public-config':
             self._handle_public_config(); return
+        if path.startswith('/api/'):
+            self.send_response(404)
+            self._set_cors()
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': 'Not found'}).encode())
+            return
         return super().do_GET()
 
     def do_POST(self):
@@ -200,6 +227,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self._handle_weekly_review()
         elif path == '/api/insights':
             self._handle_insights()
+        elif path.startswith('/api/'):
+            self.send_response(404)
+            self._set_cors()
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': 'Not found'}).encode())
         else:
             self.send_response(404)
             self._set_cors()
@@ -208,7 +241,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({'error': 'Not found'}).encode())
 
     def _set_cors(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
+        allowed_origins = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:5000').split(',')
+        origin = self.headers.get('Origin')
+
+        if origin in allowed_origins:
+            self.send_header('Access-Control-Allow-Origin', origin)
+        else:
+            self.send_header('Access-Control-Allow-Origin', allowed_origins[0])
+
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
