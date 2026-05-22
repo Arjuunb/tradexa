@@ -190,6 +190,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         path = self.path.split('?')[0]
         if path == '/api/public-config':
             self._handle_public_config(); return
+        if path.startswith('/api/'):
+            self.send_response(404)
+            self._set_cors()
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': 'Not found'}).encode())
+            return
         return super().do_GET()
 
     def do_POST(self):
@@ -200,6 +207,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self._handle_weekly_review()
         elif path == '/api/insights':
             self._handle_insights()
+        elif path.startswith('/api/'):
+            self.send_response(404)
+            self._set_cors()
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': 'Not found'}).encode())
         else:
             self.send_response(404)
             self._set_cors()
@@ -208,7 +221,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({'error': 'Not found'}).encode())
 
     def _set_cors(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
+        allowed_origins = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:5000').split(',')
+        origin = self.headers.get('Origin')
+
+        if origin in allowed_origins:
+            self.send_header('Access-Control-Allow-Origin', origin)
+        else:
+            self.send_header('Access-Control-Allow-Origin', allowed_origins[0])
+
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
