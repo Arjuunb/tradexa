@@ -224,13 +224,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def _is_origin_allowed(self):
         origin = self.headers.get('Origin')
-        if not origin:
+        if not origin or origin == 'null':
             return True # Allow direct requests (e.g., from server itself or curl without origin)
         return origin in ALLOWED_ORIGINS
 
     def _set_cors(self):
         origin = self.headers.get('Origin')
-        if origin and origin in ALLOWED_ORIGINS:
+        if origin and (origin in ALLOWED_ORIGINS or origin == 'null'):
             self.send_header('Access-Control-Allow-Origin', origin)
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
