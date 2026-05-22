@@ -1,7 +1,14 @@
 {
-  "functions": {
-    "api/*.py": {
-      "maxDuration": 10
-    }
-  }
+  "version": 2,
+  "builds": [
+    { "src": "api/public-config.py", "use": "@vercel/python" },
+    { "src": "api/health.py",        "use": "@vercel/python" },
+    { "src": "api/me.py",            "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/api/public-config", "dest": "/api/public-config.py" },
+    { "src": "/api/health",        "dest": "/api/health.py" },
+    { "src": "/api/me",            "dest": "/api/me.py" },
+    { "src": "/(.*)",              "dest": "/$1" }
+  ]
 }
