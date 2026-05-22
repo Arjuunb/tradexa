@@ -1,37 +1,23 @@
 """Shared utilities for Vercel Python API handlers."""
 import os
 import json
-import time
-import hmac
-import hashlib
 import base64
 import urllib.request
 
-SUPABASE_URL        = os.environ.get('SUPABASE_URL', '')
-SUPABASE_ANON_KEY   = os.environ.get('SUPABASE_ANON_KEY', '')
-SUPABASE_JWT_SECRET = os.environ.get('SUPABASE_JWT_SECRET', '')
-GEMINI_API_KEY      = os.environ.get('GEMINI_API_KEY', '')
-ADMIN_EMAIL         = os.environ.get('ADMIN_EMAIL', '').lower().strip()
-GEMINI_MODEL        = 'gemini-2.5-flash'
-GEMINI_BASE         = f'https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}'
-GEMINI_URL          = f'{GEMINI_BASE}:generateContent'
-GEMINI_STREAM_URL   = f'{GEMINI_BASE}:streamGenerateContent'
+GEMINI_MODEL      = 'gemini-2.5-flash'
+GEMINI_BASE       = f'https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}'
+GEMINI_URL        = f'{GEMINI_BASE}:generateContent'
+GEMINI_STREAM_URL = f'{GEMINI_BASE}:streamGenerateContent'
+
+
+def _env(key, default=''):
+    """Read env var at request time — avoids Vercel module-load timing issues."""
+    return os.environ.get(key, default)
 
 
 def _b64url_decode(s):
     s += '=' * (-len(s) % 4)
     return base64.urlsafe_b64decode(s)
-
-
-def _decode_jwt_payload(token):
-    """Decode JWT payload without verifying signature — used after Supabase confirms token."""
-    try:
-        parts = token.split('.')
-        if len(parts) != 3:
-            return None
-        return json.loads(_b64url_decode(parts[1]))
-    except Exception:
-        return None
 
 
 def verify_supabase_jwt(headers):
@@ -42,14 +28,16 @@ def verify_supabase_jwt(headers):
     if not auth.startswith('Bearer '):
         return None
     token = auth[7:].strip()
-    if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+    supabase_url = _env('SUPABASE_URL')
+    supabase_anon_key = _env('SUPABASE_ANON_KEY')
+    if not supabase_url or not supabase_anon_key:
         return None
     try:
         req = urllib.request.Request(
-            f'{SUPABASE_URL}/auth/v1/user',
+            f'{supabase_url}/auth/v1/user',
             headers={
                 'Authorization': f'Bearer {token}',
-                'apikey': SUPABASE_ANON_KEY,
+                'apikey': supabase_anon_key,
             },
             method='GET',
         )
@@ -57,7 +45,6 @@ def verify_supabase_jwt(headers):
             user = json.loads(resp.read().decode('utf-8'))
         if not user.get('id'):
             return None
-        # Return a payload-like dict so callers can use payload.get('email') etc.
         return {
             'sub':   user.get('id'),
             'email': user.get('email', ''),
@@ -98,15 +85,18 @@ def read_json_body(h):
 
 def is_admin(payload):
     """Returns True if the JWT payload belongs to the admin email."""
-    if not ADMIN_EMAIL or not payload:
+    admin_email = _env('ADMIN_EMAIL', '').lower().strip()
+    if not admin_email or not payload:
         return False
     email = (payload.get('email') or '').lower().strip()
-    return email == ADMIN_EMAIL
+    return email == admin_email
 
 
 def auth_or_401(h):
     """Returns JWT payload if valid, writes 401 and returns None otherwise."""
-    if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+    supabase_url = _env('SUPABASE_URL')
+    supabase_anon_key = _env('SUPABASE_ANON_KEY')
+    if not supabase_url or not supabase_anon_key:
         json_error(h, 503, 'SUPABASE_URL or SUPABASE_ANON_KEY not set on the server.')
         return None
     auth = h.headers.get('Authorization') or h.headers.get('authorization') or ''

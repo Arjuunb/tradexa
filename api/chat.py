@@ -7,8 +7,8 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _shared import (
-    GEMINI_API_KEY, GEMINI_URL, GEMINI_STREAM_URL,
-    json_response, json_error, read_json_body, auth_or_401, set_cors,
+    GEMINI_URL, GEMINI_STREAM_URL,
+    json_response, json_error, read_json_body, auth_or_401, set_cors, _env,
 )
 
 TRADEBOT_SYSTEM = (
@@ -61,7 +61,7 @@ class handler(BaseHTTPRequestHandler):
 
         want_stream = '?stream=1' in self.path or '&stream=1' in self.path
 
-        if not GEMINI_API_KEY:
+        if not _env('GEMINI_API_KEY'):
             if want_stream:
                 self._send_sse_fallback(FALLBACK_MSG)
             else:
@@ -93,7 +93,7 @@ class handler(BaseHTTPRequestHandler):
 
         try:
             req = urllib.request.Request(
-                f'{GEMINI_URL}?key={GEMINI_API_KEY}',
+                f'{GEMINI_URL}?key={_env('GEMINI_API_KEY')}',
                 data=json.dumps(payload).encode('utf-8'),
                 headers={'Content-Type': 'application/json'},
                 method='POST',
@@ -124,7 +124,7 @@ class handler(BaseHTTPRequestHandler):
     def _stream_chat(self, payload):
         try:
             req = urllib.request.Request(
-                f'{GEMINI_STREAM_URL}?alt=sse&key={GEMINI_API_KEY}',
+                f'{GEMINI_STREAM_URL}?alt=sse&key={_env('GEMINI_API_KEY')}',
                 data=json.dumps(payload).encode('utf-8'),
                 headers={'Content-Type': 'application/json'},
                 method='POST',

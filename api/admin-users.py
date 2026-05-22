@@ -6,10 +6,7 @@ import urllib.error
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _shared import json_response, json_error, set_cors, verify_supabase_jwt, is_admin, ADMIN_EMAIL
-
-SUPABASE_URL         = os.environ.get('SUPABASE_URL', '')
-SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY', '')
+from _shared import json_response, json_error, set_cors, verify_supabase_jwt, is_admin, _env
 
 
 class handler(BaseHTTPRequestHandler):
@@ -19,7 +16,11 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        if not SUPABASE_SERVICE_KEY:
+        supabase_url = _env('SUPABASE_URL')
+        service_key  = _env('SUPABASE_SERVICE_KEY')
+        admin_email  = _env('ADMIN_EMAIL', '').lower().strip()
+
+        if not service_key:
             json_error(self, 503, 'SUPABASE_SERVICE_KEY not configured.')
             return
 
@@ -34,10 +35,10 @@ class handler(BaseHTTPRequestHandler):
 
         try:
             req = urllib.request.Request(
-                f'{SUPABASE_URL}/auth/v1/admin/users?page=1&per_page=200',
+                f'{supabase_url}/auth/v1/admin/users?page=1&per_page=200',
                 headers={
-                    'Authorization': f'Bearer {SUPABASE_SERVICE_KEY}',
-                    'apikey': SUPABASE_SERVICE_KEY,
+                    'Authorization': f'Bearer {service_key}',
+                    'apikey': service_key,
                 },
                 method='GET',
             )
@@ -53,8 +54,8 @@ class handler(BaseHTTPRequestHandler):
                 normalized.append({
                     'id':         u.get('id'),
                     'email':      u.get('email', ''),
-                    'role':       'owner' if (u.get('email','').lower() == ADMIN_EMAIL) else 'user',
-                    'plan':       'elite' if (u.get('email','').lower() == ADMIN_EMAIL) else 'free',
+                    'role':       'owner' if (u.get('email','').lower() == admin_email) else 'user',
+                    'plan':       'elite' if (u.get('email','').lower() == admin_email) else 'free',
                     'created_at': u.get('created_at', ''),
                     'last_sign_in': u.get('last_sign_in_at', ''),
                     'confirmed':  bool(u.get('email_confirmed_at')),

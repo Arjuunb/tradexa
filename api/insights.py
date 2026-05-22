@@ -7,8 +7,8 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _shared import (
-    GEMINI_API_KEY, GEMINI_URL,
-    json_response, json_error, read_json_body, auth_or_401, set_cors,
+    GEMINI_URL,
+    json_response, json_error, read_json_body, auth_or_401, set_cors, _env,
 )
 
 INSIGHTS_SYSTEM = (
@@ -39,7 +39,7 @@ class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if auth_or_401(self) is None:
             return
-        if not GEMINI_API_KEY:
+        if not _env('GEMINI_API_KEY'):
             json_error(self, 503, 'AI is not configured on this server.')
             return
         data = read_json_body(self)
@@ -84,7 +84,7 @@ class handler(BaseHTTPRequestHandler):
 
         try:
             req = urllib.request.Request(
-                f'{GEMINI_URL}?key={GEMINI_API_KEY}',
+                f'{GEMINI_URL}?key={_env('GEMINI_API_KEY')}',
                 data=json.dumps(payload).encode('utf-8'),
                 headers={'Content-Type': 'application/json'},
                 method='POST',
