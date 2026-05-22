@@ -1,7 +1,25 @@
 {
-  "functions": {
-    "api/*.py": {
-      "maxDuration": 10
-    }
-  }
+  "version": 2,
+  "builds": [
+    { "src": "api/*.py",       "use": "@vercel/python" },
+    { "src": "auth/**",        "use": "@vercel/static" },
+    { "src": "assets/**",      "use": "@vercel/static" },
+    { "src": "index.html",     "use": "@vercel/static" },
+    { "src": "changelog.html", "use": "@vercel/static" },
+    { "src": "roadmap.html",   "use": "@vercel/static" },
+    { "src": "waitlist.html",  "use": "@vercel/static" },
+    { "src": "favicon.ico",                     "use": "@vercel/static" },
+    { "src": "robots.txt",                      "use": "@vercel/static" },
+    { "src": "sitemap.xml",                     "use": "@vercel/static" },
+    { "src": "site.webmanifest",                "use": "@vercel/static" },
+    { "src": "apple-touch-icon.png",            "use": "@vercel/static" },
+    { "src": "apple-touch-icon-precomposed.png","use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/public-config", "dest": "/api/public-config.py" },
+    { "src": "/api/health",        "dest": "/api/health.py" },
+    { "src": "/api/me",            "dest": "/api/me.py" },
+    { "src": "/",                  "dest": "/index.html" },
+    { "src": "/(.+)",              "dest": "/$1" }
+  ]
 }
