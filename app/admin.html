@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel — Tradexa</title>
+  <meta name="robots" content="noindex"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{min-height:100%;background:#0d0f12;font-family:'Inter',sans-serif;color:#F5F5F5;-webkit-font-smoothing:antialiased}
+    :root{--g:#FFB732;--border:rgba(255,255,255,.08);--s1:#13161b;--muted:#A1A1AA;--dim:#525252;--err:#EF4444;--ok:#22C55E}
+
+    /* layout */
+    .page{max-width:1100px;margin:0 auto;padding:40px 24px 80px}
+
+    /* header */
+    .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:36px;flex-wrap:wrap;gap:16px}
+    .page-title{font-size:26px;font-weight:800;color:#fff;letter-spacing:-.04em}
+    .page-sub{font-size:13px;color:var(--muted);margin-top:3px}
+    .back-link{font-size:13px;color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:6px;transition:color .15s}
+    .back-link:hover{color:#fff}
+
+    /* stat cards */
+    .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+    .stat-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:20px 22px}
+    .stat-num{font-size:32px;font-weight:800;color:#fff;letter-spacing:-.05em;line-height:1}
+    .stat-num.gold{color:var(--g)}
+    .stat-label{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-top:6px}
+
+    /* table card */
+    .table-card{background:var(--s1);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+    .table-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border)}
+    .table-title{font-size:15px;font-weight:700;color:#fff}
+    .refresh-btn{background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:600;padding:7px 14px;border-radius:7px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;display:flex;align-items:center;gap:6px}
+    .refresh-btn:hover{color:#fff;background:rgba(255,255,255,.1)}
+
+    /* search */
+    .search-bar{padding:12px 22px;border-bottom:1px solid var(--border)}
+    .search-input{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:9px 14px;color:#fff;font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
+    .search-input:focus{border-color:rgba(255,183,50,.4)}
+    .search-input::placeholder{color:var(--dim)}
+
+    /* table */
+    table{width:100%;border-collapse:collapse}
+    thead th{padding:11px 22px;text-align:left;font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border);background:#0d0f12}
+    tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .12s}
+    tbody tr:last-child{border-bottom:none}
+    tbody tr:hover{background:rgba(255,255,255,.02)}
+    td{padding:13px 22px;font-size:13px;color:var(--muted);vertical-align:middle}
+    td.email{color:#fff;font-weight:500;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+    /* badges */
+    .badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;text-transform:uppercase;letter-spacing:.04em}
+    .badge-owner{background:rgba(255,183,50,.12);color:#FFB732;border:1px solid rgba(255,183,50,.2)}
+    .badge-user{background:rgba(255,255,255,.05);color:var(--dim);border:1px solid var(--border)}
+    .badge-elite{background:rgba(255,183,50,.1);color:#FFB732}
+    .badge-free{background:rgba(255,255,255,.04);color:var(--dim)}
+    .badge-ok{background:rgba(34,197,94,.1);color:#22C55E}
+    .badge-warn{background:rgba(239,68,68,.1);color:#EF4444}
+
+    /* provider dot */
+    .provider{display:flex;align-items:center;gap:6px;font-size:12px}
+    .provider-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+    /* empty / loading / error states */
+    .state-row{padding:48px 22px;text-align:center;color:var(--dim);font-size:13px}
+    .spinner{display:inline-block;width:20px;height:20px;border:2px solid rgba(255,183,50,.2);border-top-color:#FFB732;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:10px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .err-msg{color:#fca5a5;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:12px 16px;font-size:13px;margin:16px 22px}
+
+    /* admin notice */
+    .admin-notice{background:rgba(255,183,50,.06);border:1px solid rgba(255,183,50,.15);border-radius:10px;padding:14px 18px;margin-bottom:24px;font-size:13px;color:#FFB732;display:flex;align-items:center;gap:10px}
+
+    @media(max-width:640px){
+      .stats-row{grid-template-columns:1fr 1fr}
+      thead th:nth-child(4),thead th:nth-child(5),td:nth-child(4),td:nth-child(5){display:none}
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Admin Panel</div>
+      <div class="page-sub">Manage users, roles, and subscription plans.</div>
+    </div>
+    <a href="/app/dashboard.html" class="back-link">
+      ← Back to Dashboard
+    </a>
+  </div>
+
+  <div class="admin-notice" id="adminNotice" style="display:none">
+    ✦ Signed in as owner — full access granted.
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-num" id="statTotal">—</div>
+      <div class="stat-label">Total Users</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num gold" id="statPremium">—</div>
+      <div class="stat-label">Premium Users</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="statFree">—</div>
+      <div class="stat-label">Free Users</div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title">All Users</div>
+      <button class="refresh-btn" id="refreshBtn">↻ Refresh</button>
+    </div>
+    <div class="search-bar">
+      <input class="search-input" id="searchInput" placeholder="Search by email…" type="text"/>
+    </div>
+    <div id="errBox" class="err-msg" style="display:none"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Plan</th>
+          <th>Provider</th>
+          <th>Joined</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="usersTbody">
+        <tr><td colspan="6" class="state-row">
+          <div class="spinner"></div><br/>Loading users…
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script src="/assets/supabase-auth.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var allUsers = [];
+
+  function fmt(iso) {
+    if (!iso) return '—';
+    try { return new Date(iso).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }); }
+    catch (_) { return iso.slice(0,10); }
+  }
+
+  function providerColor(p) {
+    return {google:'#EA4335', github:'#fff', discord:'#5865F2', email:'#A1A1AA'}[p] || '#A1A1AA';
+  }
+
+  function renderRows(users) {
+    var tbody = document.getElementById('usersTbody');
+    if (!users.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="state-row">No users found.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = users.map(function (u) {
+      var roleBadge  = u.role === 'owner'
+        ? '<span class="badge badge-owner">Owner</span>'
+        : '<span class="badge badge-user">User</span>';
+      var planBadge  = u.plan === 'elite'
+        ? '<span class="badge badge-elite">Elite</span>'
+        : '<span class="badge badge-free">Free</span>';
+      var statusBadge = u.confirmed
+        ? '<span class="badge badge-ok">Active</span>'
+        : '<span class="badge badge-warn">Unconfirmed</span>';
+      var provider = '<span class="provider"><span class="provider-dot" style="background:' + providerColor(u.provider) + '"></span>' + (u.provider || 'email') + '</span>';
+      return '<tr>' +
+        '<td class="email" title="' + u.email + '">' + u.email + '</td>' +
+        '<td>' + roleBadge + '</td>' +
+        '<td>' + planBadge + '</td>' +
+        '<td>' + provider + '</td>' +
+        '<td>' + fmt(u.created_at) + '</td>' +
+        '<td>' + statusBadge + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function showError(msg) {
+    var box = document.getElementById('errBox');
+    box.textContent  = msg;
+    box.style.display = 'block';
+    document.getElementById('usersTbody').innerHTML =
+      '<tr><td colspan="6" class="state-row">Could not load users.</td></tr>';
+  }
+
+  async function loadUsers() {
+    document.getElementById('errBox').style.display = 'none';
+    document.getElementById('usersTbody').innerHTML =
+      '<tr><td colspan="6" class="state-row"><div class="spinner"></div><br/>Loading…</td></tr>';
+
+    try {
+      const token = await TxAuth.getToken();
+      if (!token) { showError('Not authenticated. Please log in.'); return; }
+
+      const res = await fetch('/api/admin-users', {
+        headers: { 'Authorization': 'Bearer ' + token },
+      });
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        showError('Server returned non-JSON response (HTTP ' + res.status + '). Check Vercel logs.');
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) {
+        showError(data.error || 'API error ' + res.status);
+        return;
+      }
+
+      allUsers = data.users || [];
+      document.getElementById('statTotal').textContent   = data.total   ?? allUsers.length;
+      document.getElementById('statPremium').textContent = data.premium ?? 0;
+      document.getElementById('statFree').textContent    = data.free    ?? allUsers.length;
+      renderRows(allUsers);
+
+    } catch (err) {
+      showError('Network error: ' + err.message);
+    }
+  }
+
+  // Search filter
+  document.getElementById('searchInput').addEventListener('input', function () {
+    var q = this.value.toLowerCase();
+    renderRows(q ? allUsers.filter(function (u) { return u.email.toLowerCase().includes(q); }) : allUsers);
+  });
+
+  document.getElementById('refreshBtn').addEventListener('click', loadUsers);
+
+  // Guard: admin only
+  TxAuth.ready
+    .then(async function () {
+      const admin = await TxAuth.isAdmin();
+      if (!admin) {
+        document.querySelector('.page').innerHTML =
+          '<div style="text-align:center;padding:80px 24px;color:#A1A1AA">' +
+          '<div style="font-size:48px;margin-bottom:16px">🔒</div>' +
+          '<div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px">Access denied</div>' +
+          '<div style="font-size:14px">This page is only accessible to the account owner.</div>' +
+          '<a href="/app/dashboard.html" style="display:inline-block;margin-top:24px;color:#FFB732;text-decoration:none;font-weight:600">← Back to Dashboard</a>' +
+          '</div>';
+        return;
+      }
+      document.getElementById('adminNotice').style.display = 'flex';
+      loadUsers();
+    })
+    .catch(function () {
+      location.replace('/auth/login.html?redirectTo=' + encodeURIComponent(location.href));
+    });
+})();
+</script>
+</body>
+</html>
