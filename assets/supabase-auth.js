@@ -131,7 +131,7 @@
 
   const TxAuth = {
     PROVIDERS: PROVIDERS,
-    ready: _ready,
+    get ready() { return _ready; },
 
     async getUser() {
       await _ready;
