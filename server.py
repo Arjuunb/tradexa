@@ -36,6 +36,8 @@ SUPABASE_URL         = os.environ.get('SUPABASE_URL', '')
 SUPABASE_ANON_KEY    = os.environ.get('SUPABASE_ANON_KEY', '')
 SUPABASE_JWT_SECRET  = os.environ.get('SUPABASE_JWT_SECRET', '')
 
+ALLOWED_ORIGINS      = [o.strip() for o in os.environ.get('ALLOWED_ORIGINS', 'http://localhost:5000').split(',') if o.strip()]
+
 
 # ──────────────────────────── Supabase JWT verify ────────────────────────────
 
@@ -182,17 +184,29 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         print(f"{self.address_string()} - {format % args}")
 
     def do_OPTIONS(self):
+        if not self._is_origin_allowed():
+            self.send_response(403)
+            self.end_headers()
+            return
         self.send_response(200)
         self._set_cors()
         self.end_headers()
 
     def do_GET(self):
+        if not self._is_origin_allowed():
+            self.send_response(403)
+            self.end_headers()
+            return
         path = self.path.split('?')[0]
         if path == '/api/public-config':
             self._handle_public_config(); return
         return super().do_GET()
 
     def do_POST(self):
+        if not self._is_origin_allowed():
+            self.send_response(403)
+            self.end_headers()
+            return
         path = self.path.split('?')[0]
         if path == '/api/chat':
             self._handle_chat()
@@ -207,8 +221,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({'error': 'Not found'}).encode())
 
+    def _is_origin_allowed(self):
+        origin = self.headers.get('Origin')
+        if not origin:
+            return True # Allow direct requests (e.g., from server itself or curl without origin)
+        return origin in ALLOWED_ORIGINS
+
     def _set_cors(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
+        origin = self.headers.get('Origin')
+        if origin and origin in ALLOWED_ORIGINS:
+            self.send_header('Access-Control-Allow-Origin', origin)
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
