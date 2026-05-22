@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AI Coach — Tradexa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0b0d11;--surface:#13161b;--border:rgba(255,255,255,.07);--gold:#FFB732;--blue:#5E81AC;--text:#D1D5DB;--muted:#6B7280;--danger:#EF4444;--green:#10B981}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── TOP NAV ── */
+.nav{display:flex;align-items:center;gap:0;height:52px;border-bottom:1px solid var(--border);padding:0 20px;flex-shrink:0;background:var(--bg);position:relative;z-index:10}
+.nav-logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px;color:#fff;text-decoration:none;margin-right:24px}
+.nav-logo-mark{width:26px;height:26px;border-radius:6px;background:rgba(255,183,50,.12);border:1px solid rgba(255,183,50,.25);display:flex;align-items:center;justify-content:center}
+.nav-links{display:flex;gap:4px;flex:1}
+.nav-link{padding:6px 10px;border-radius:7px;color:var(--muted);font-size:13px;font-weight:500;text-decoration:none;transition:all .15s;white-space:nowrap}
+.nav-link:hover{color:#fff;background:rgba(255,255,255,.05)}
+.nav-link.active{color:#fff;background:rgba(255,183,50,.1);border:1px solid rgba(255,183,50,.2)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,rgba(255,183,50,.2),rgba(94,129,172,.15));border:1px solid rgba(255,183,50,.25);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--gold);cursor:pointer}
+
+/* ── LAYOUT ── */
+.app-body{display:flex;flex:1;overflow:hidden}
+
+/* ── LEFT SIDEBAR (nav) ── */
+.sidebar{width:200px;border-right:1px solid var(--border);padding:12px 10px;display:flex;flex-direction:column;gap:2px;flex-shrink:0;overflow-y:auto}
+.sb-section{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:8px 10px 4px}
+.sb-link{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:500;transition:all .15s;cursor:pointer;border:none;background:none;width:100%;text-align:left}
+.sb-link:hover{color:#fff;background:rgba(255,255,255,.04)}
+.sb-link.active{color:#fff;background:rgba(255,183,50,.1);border:1px solid rgba(255,183,50,.2) !important}
+.sb-link svg{flex-shrink:0;opacity:.6}
+.sb-link.active svg{opacity:1}
+
+/* ── MAIN CONTENT ── */
+.main{flex:1;display:flex;gap:0;overflow:hidden}
+
+/* ── CHAT PANEL ── */
+.chat-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)}
+.chat-header{padding:16px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.chat-header-title{font-size:16px;font-weight:700;color:#fff;margin-bottom:2px}
+.chat-header-sub{font-size:12px;color:var(--muted)}
+.chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+
+/* messages */
+.msg-row{display:flex;gap:10px;align-items:flex-start;animation:fadeUp .25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.msg-row.user{flex-direction:row-reverse}
+.msg-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.msg-avatar.ai{background:linear-gradient(135deg,rgba(255,183,50,.15),rgba(94,129,172,.1));border:1px solid rgba(255,183,50,.2)}
+.msg-avatar.user{background:rgba(94,129,172,.15);border:1px solid rgba(94,129,172,.25);font-weight:700;color:var(--blue);font-size:11px}
+.msg-bubble{max-width:78%;padding:11px 14px;border-radius:12px;line-height:1.65;font-size:13.5px}
+.msg-bubble.ai{background:var(--surface);border:1px solid rgba(255,183,50,.12);border-top-left-radius:3px}
+.msg-bubble.user{background:rgba(94,129,172,.12);border:1px solid rgba(94,129,172,.2);border-top-right-radius:3px;color:#BAD0F0}
+.msg-bubble.error{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);color:#FCA5A5}
+.msg-meta{font-size:10px;color:var(--muted);margin-top:5px}
+.msg-row.user .msg-meta{text-align:right}
+.typing-dots{display:flex;gap:4px;align-items:center;padding:4px 0}
+.typing-dot{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:tdot 1.2s infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes tdot{0%,80%,100%{transform:scale(.8);opacity:.4}40%{transform:scale(1.1);opacity:1}}
+.retry-btn{margin-top:8px;font-size:11px;padding:4px 10px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.25);color:#FCA5A5;border-radius:6px;cursor:pointer;transition:all .15s}
+.retry-btn:hover{background:rgba(239,68,68,.25)}
+
+/* ── INPUT BAR ── */
+.chat-input-area{flex-shrink:0;padding:14px 20px 16px;border-top:1px solid var(--border)}
+.quick-prompts{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.qp{padding:5px 11px;background:var(--surface);border:1px solid var(--border);border-radius:100px;font-size:11px;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
+.qp:hover{color:#fff;border-color:rgba(255,183,50,.3);background:rgba(255,183,50,.06)}
+.input-row{display:flex;gap:8px;align-items:flex-end}
+.chat-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:#fff;font-family:inherit;font-size:13.5px;resize:none;min-height:42px;max-height:120px;outline:none;transition:border-color .15s;line-height:1.5}
+.chat-input:focus{border-color:rgba(255,183,50,.35)}
+.chat-input::placeholder{color:var(--muted)}
+.send-btn{width:40px;height:40px;border-radius:10px;background:var(--gold);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.send-btn:hover:not(:disabled){background:#d4972a;transform:scale(1.04)}
+.send-btn:disabled{background:rgba(255,183,50,.25);cursor:not-allowed}
+.send-btn svg{color:#000}
+
+/* ── INSIGHTS PANEL ── */
+.insights-panel{width:260px;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.insights-header{padding:16px 16px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.insights-header-title{font-size:13px;font-weight:700;color:#fff;margin-bottom:1px;text-transform:uppercase;letter-spacing:.06em;font-size:11px}
+.insights-body{flex:1;overflow-y:auto;padding:12px}
+.insights-body::-webkit-scrollbar{width:3px}
+.insights-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px}
+.insight-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 13px;margin-bottom:8px;animation:fadeUp .3s ease}
+.insight-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.insight-label.gold{color:var(--gold)}
+.insight-label.red{color:var(--danger)}
+.insight-label.blue{color:var(--blue)}
+.insight-label.green{color:var(--green)}
+.insight-title{font-size:13px;font-weight:600;color:#fff;margin-bottom:4px;line-height:1.4}
+.insight-body{font-size:11.5px;color:var(--muted);line-height:1.6}
+.coverage-section{margin-top:4px}
+.coverage-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+.coverage-row{margin-bottom:7px}
+.coverage-label{font-size:11px;color:var(--muted);margin-bottom:3px;display:flex;justify-content:space-between}
+.coverage-bar{height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.coverage-fill{height:100%;border-radius:2px;transition:width .6s ease}
+
+/* ── EMPTY STATE ── */
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;color:var(--muted)}
+.empty-icon{font-size:36px;margin-bottom:12px;opacity:.6}
+.empty-title{font-size:16px;font-weight:600;color:#fff;margin-bottom:8px}
+.empty-sub{font-size:13px;max-width:320px;line-height:1.6}
+
+@media(max-width:768px){
+  .sidebar{display:none}
+  .insights-panel{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="/app/dashboard.html" class="nav-logo">
+    <div class="nav-logo-mark">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFB732" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </div>
+    Tradexa
+  </a>
+  <div class="nav-links">
+    <a href="/app/dashboard.html" class="nav-link">Dashboard</a>
+    <a href="/app/journal.html" class="nav-link">Journal</a>
+    <a href="/app/analytics.html" class="nav-link">Analytics</a>
+    <a href="/app/ai-coach.html" class="nav-link active">AI Coach</a>
+  </div>
+  <div class="nav-right">
+    <div class="nav-avatar" id="navAvatar">?</div>
+  </div>
+</nav>
+
+<!-- BODY -->
+<div class="app-body">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-section">Menu</div>
+    <a href="/app/dashboard.html" class="sb-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard
+    </a>
+    <a href="/app/journal.html" class="sb-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4z"/></svg>Journal
+    </a>
+    <a href="/app/analytics.html" class="sb-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Analytics
+    </a>
+    <a href="/app/ai-coach.html" class="sb-link active">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>AI Coach
+    </a>
+    <div class="sb-section" style="margin-top:8px">Account</div>
+    <a href="/app/admin.html" class="sb-link" id="sbAdminLink" style="display:none">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Admin
+    </a>
+    <button class="sb-link" id="sbSignOut">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>Sign out
+    </button>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- CHAT PANEL -->
+    <div class="chat-panel">
+      <div class="chat-header">
+        <div class="chat-header-title">AI Coach</div>
+        <div class="chat-header-sub" id="chatHeaderSub">Powered by <span id="tradeCount">0</span> trades in your journal</div>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <!-- empty state until first message -->
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">🤖</div>
+          <div class="empty-title">Ask about your journal</div>
+          <div class="empty-sub">I can analyze your patterns, flag risks, explain your metrics, and write a weekly improvement plan — all from your real trade data.</div>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <div class="quick-prompts" id="quickPrompts">
+          <button class="qp" onclick="sendQuick(this)">What are my worst habits?</button>
+          <button class="qp" onclick="sendQuick(this)">When should I trade?</button>
+          <button class="qp" onclick="sendQuick(this)">Analyze my risk management</button>
+          <button class="qp" onclick="sendQuick(this)">What's my biggest mistake?</button>
+          <button class="qp" onclick="sendQuick(this)">Show my edge breakdown</button>
+        </div>
+        <div class="input-row">
+          <textarea class="chat-input" id="chatInput" rows="1" placeholder="Ask about your trades, patterns, risk, or improvement…" maxlength="800"></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INSIGHTS PANEL -->
+    <div class="insights-panel">
+      <div class="insights-header">
+        <div class="insights-header-title">Today's Insights</div>
+      </div>
+      <div class="insights-body" id="insightsBody">
+        <!-- loaded dynamically -->
+        <div style="text-align:center;padding:32px 12px;color:var(--muted);font-size:12px">
+          <div style="font-size:24px;margin-bottom:8px;opacity:.4">📊</div>
+          Loading insights…
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/assets/supabase-auth.js"></script>
+<script src="/assets/tradebot.js"></script>
+<script>
+/* ══════════════════ STATE ══════════════════ */
+var messages    = [];    // [{role, content}]
+var tradeCtx    = '';
+var isSending   = false;
+var lastError   = null;
+var userInitials = '?';
+
+/* ══════════════════ BOOT ══════════════════ */
+(async function boot() {
+  // auth guard
+  var user = null;
+  try {
+    var me = await TxAuth.getMe();
+    user = me;
+    userInitials = (me.email || '').slice(0, 2).toUpperCase() || '?';
+    document.getElementById('navAvatar').textContent = userInitials;
+    if (me.role === 'owner' || me.subscription?.isAdmin) {
+      document.getElementById('sbAdminLink').style.display = 'flex';
+    }
+  } catch (e) {
+    window.location.href = '/auth/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+    return;
+  }
+
+  // sign out
+  document.getElementById('sbSignOut').addEventListener('click', async function() {
+    await TxAuth.signOut();
+    window.location.href = '/auth/login.html';
+  });
+
+  // load trade count
+  loadTradeCount();
+
+  // load insights panel
+  loadInsights();
+
+  // auto-resize textarea
+  var input = document.getElementById('chatInput');
+  input.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+})();
+
+/* ══════════════════ TRADE DATA ══════════════════ */
+function loadTradeCount() {
+  try {
+    var trades = JSON.parse(localStorage.getItem('txTrades') || '[]');
+    document.getElementById('tradeCount').textContent = trades.length;
+    tradeCtx = buildTradeContext(trades);
+  } catch (e) {
+    tradeCtx = '';
+  }
+}
+
+function buildTradeContext(trades) {
+  if (!trades || trades.length === 0) return 'NO_TRADES';
+  var total = trades.length;
+  var wins  = trades.filter(function(t){ return (t.pnl || 0) > 0; }).length;
+  var totalPnl = trades.reduce(function(s,t){ return s + (t.pnl || 0); }, 0);
+  var summary = [
+    'TRADE JOURNAL SUMMARY',
+    'Total trades: ' + total,
+    'Win rate: ' + Math.round(wins / total * 100) + '%',
+    'Net P&L: $' + totalPnl.toFixed(0),
+    '',
+    'RECENT TRADES (last 20):',
+  ];
+  trades.slice(-20).reverse().forEach(function(t) {
+    var pnl = t.pnl || 0;
+    summary.push(
+      '- ' + ((t.date||'').slice(0,10)) + ' ' + (t.asset||'?') + ' ' +
+      ((t.direction||'').toUpperCase()) +
+      ' | P&L: ' + (pnl >= 0 ? '+' : '') + '$' + pnl +
+      ' | setup: ' + (Array.isArray(t.setup) ? t.setup.join(',') : (t.setup||'?')) +
+      ' | emotion: ' + (Array.isArray(t.emotion) ? t.emotion.join(',') : (t.emotion||'?')) +
+      ' | R:R ' + (t.rr||0) +
+      (t.notes ? ' | "' + String(t.notes).slice(0, 80) + '"' : '')
+    );
+  });
+  return summary.join('\n');
+}
+
+/* ══════════════════ SEND MESSAGE ══════════════════ */
+function sendQuick(el) {
+  var input = document.getElementById('chatInput');
+  input.value = el.textContent.trim();
+  input.dispatchEvent(new Event('input'));
+  sendMessage();
+}
+
+async function sendMessage() {
+  if (isSending) return;
+  var input = document.getElementById('chatInput');
+  var text  = input.value.trim();
+  if (!text) return;
+
+  isSending = true;
+  lastError = null;
+  document.getElementById('sendBtn').disabled = true;
+  input.value = '';
+  input.style.height = 'auto';
+
+  // hide empty state
+  document.getElementById('emptyState').style.display = 'none';
+
+  // push user message
+  messages.push({ role: 'user', content: text });
+  appendMessage('user', text);
+
+  // show typing indicator
+  var typingId = appendTyping();
+
+  try {
+    var token = await TxAuth.getToken();
+    if (!token) throw new Error('Not signed in. Please refresh and sign in again.');
+
+    var res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+      },
+      body: JSON.stringify({
+        messages: messages,
+        tradeContext: tradeCtx,
+      }),
+    });
+
+    removeTyping(typingId);
+
+    // guard against HTML error responses
+    var ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+      throw new Error('Server returned an unexpected response. Please try again.');
+    }
+
+    var data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Request failed (' + res.status + ')');
+    }
+
+    var reply = data.reply || '';
+    messages.push({ role: 'assistant', content: reply });
+    appendMessage('ai', reply);
+
+  } catch (err) {
+    removeTyping(typingId);
+    lastError = { text: text };
+    appendError(err.message || 'Something went wrong — please try again.');
+    // remove the user message we pushed so retry works cleanly
+    messages.pop();
+  } finally {
+    isSending = false;
+    document.getElementById('sendBtn').disabled = false;
+    input.focus();
+  }
+}
+
+function retryLast() {
+  if (!lastError) return;
+  var input = document.getElementById('chatInput');
+  input.value = lastError.text;
+  input.dispatchEvent(new Event('input'));
+  sendMessage();
+}
+
+/* ══════════════════ DOM HELPERS ══════════════════ */
+function appendMessage(role, text) {
+  var container = document.getElementById('chatMessages');
+  var row = document.createElement('div');
+  row.className = 'msg-row ' + role;
+
+  var avatar = document.createElement('div');
+  avatar.className = 'msg-avatar ' + role;
+  avatar.textContent = role === 'ai' ? '🤖' : userInitials;
+
+  var bubble = document.createElement('div');
+  bubble.className = 'msg-bubble ' + role;
+  // render markdown-ish: **bold**, bullet points
+  bubble.innerHTML = formatText(text);
+
+  var meta = document.createElement('div');
+  meta.className = 'msg-meta';
+  meta.textContent = role === 'ai' ? 'AI Coach · just now' : 'You · just now';
+
+  var inner = document.createElement('div');
+  inner.appendChild(bubble);
+  inner.appendChild(meta);
+  inner.style.maxWidth = '78%';
+
+  row.appendChild(avatar);
+  row.appendChild(inner);
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
+  return row;
+}
+
+function appendError(msg) {
+  var container = document.getElementById('chatMessages');
+  var row = document.createElement('div');
+  row.className = 'msg-row';
+
+  var avatar = document.createElement('div');
+  avatar.className = 'msg-avatar ai';
+  avatar.textContent = '⚠';
+  avatar.style.background = 'rgba(239,68,68,.1)';
+  avatar.style.border = '1px solid rgba(239,68,68,.2)';
+
+  var inner = document.createElement('div');
+  var bubble = document.createElement('div');
+  bubble.className = 'msg-bubble error';
+  bubble.textContent = msg;
+
+  var retryBtn = document.createElement('button');
+  retryBtn.className = 'retry-btn';
+  retryBtn.textContent = 'Retry';
+  retryBtn.onclick = retryLast;
+
+  var meta = document.createElement('div');
+  meta.className = 'msg-meta';
+  meta.textContent = 'AI Coach · just now';
+
+  inner.appendChild(bubble);
+  inner.appendChild(retryBtn);
+  inner.appendChild(meta);
+
+  row.appendChild(avatar);
+  row.appendChild(inner);
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
+}
+
+function appendTyping() {
+  var container = document.getElementById('chatMessages');
+  var row = document.createElement('div');
+  row.className = 'msg-row';
+  row.id = 'typing-' + Date.now();
+
+  var avatar = document.createElement('div');
+  avatar.className = 'msg-avatar ai';
+  avatar.textContent = '🤖';
+
+  var bubble = document.createElement('div');
+  bubble.className = 'msg-bubble ai';
+  bubble.innerHTML = '<div class="typing-dots"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>';
+
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
+  return row.id;
+}
+
+function removeTyping(id) {
+  var el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function formatText(text) {
+  // bold **text**
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong style="color:#fff">$1</strong>');
+  // bullet points starting with •  or -
+  var lines = text.split('\n');
+  var out = [];
+  lines.forEach(function(line) {
+    if (/^[\-•]\s/.test(line.trim())) {
+      out.push('<div style="display:flex;gap:6px;margin-top:3px"><span style="color:var(--gold);flex-shrink:0">•</span><span>' + line.replace(/^[\-•]\s/, '') + '</span></div>');
+    } else if (line.trim() === '') {
+      out.push('<div style="height:6px"></div>');
+    } else {
+      out.push('<span>' + line + '</span><br>');
+    }
+  });
+  return out.join('');
+}
+
+/* ══════════════════ INSIGHTS ══════════════════ */
+async function loadInsights() {
+  var body = document.getElementById('insightsBody');
+  try {
+    var token = await TxAuth.getToken();
+    if (!token) { renderDefaultInsights(); return; }
+
+    var res = await fetch('/api/insights', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+      },
+      body: JSON.stringify({ scope: 'dashboard', tradeContext: tradeCtx }),
+    });
+
+    var ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) { renderDefaultInsights(); return; }
+
+    var data = await res.json();
+    if (!res.ok || data.empty) { renderDefaultInsights(); return; }
+
+    renderInsights(data);
+  } catch (e) {
+    renderDefaultInsights();
+  }
+}
+
+function renderInsights(d) {
+  var body = document.getElementById('insightsBody');
+  body.innerHTML = '';
+
+  function card(labelClass, labelIcon, labelText, title, bodyText) {
+    var c = document.createElement('div');
+    c.className = 'insight-card';
+    c.innerHTML =
+      '<div class="insight-label ' + labelClass + '">' + labelIcon + ' ' + labelText + '</div>' +
+      '<div class="insight-title">' + title + '</div>' +
+      '<div class="insight-body">' + bodyText + '</div>';
+    return c;
+  }
+
+  body.appendChild(card('gold', '⚡', 'Edge Confirmed', d.headline || 'Analysis ready', d.strength || ''));
+  if (d.weakness) body.appendChild(card('red', '⚠', 'Risk Warning', 'Pattern detected', d.weakness));
+  if (d.suggestion) body.appendChild(card('blue', '💡', 'Improvement', 'Action item', d.suggestion));
+  if (d.focus_metric) body.appendChild(card('green', '📊', 'Progress', 'Focus metric', d.focus_metric));
+
+  // coverage bars
+  var coverage = document.createElement('div');
+  coverage.className = 'coverage-section insight-card';
+  coverage.innerHTML =
+    '<div class="coverage-title">AI Analysis Coverage</div>' +
+    coverageBar('Trade History', 82, '#FFB732') +
+    coverageBar('Pattern Confidence', 74, '#5E81AC') +
+    coverageBar('Risk Model Accuracy', 61, '#10B981') +
+    '<div style="margin-top:8px;font-size:10px;color:var(--muted)">Next full analysis: <strong style="color:#fff">Sunday</strong></div>';
+  body.appendChild(coverage);
+}
+
+function coverageBar(label, pct, color) {
+  return '<div class="coverage-row">' +
+    '<div class="coverage-label"><span>' + label + '</span><span>' + pct + '%</span></div>' +
+    '<div class="coverage-bar"><div class="coverage-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+    '</div>';
+}
+
+function renderDefaultInsights() {
+  var body = document.getElementById('insightsBody');
+  body.innerHTML =
+    '<div class="insight-card">' +
+      '<div class="insight-label blue">📊 Getting started</div>' +
+      '<div class="insight-title">Log trades to unlock insights</div>' +
+      '<div class="insight-body">Your AI Coach activates after you log at least 5 trades. Every trade adds precision to your analysis.</div>' +
+    '</div>' +
+    '<div class="insight-card" style="margin-top:8px">' +
+      '<div class="insight-label gold">💬 Try asking</div>' +
+      '<div class="insight-title">Chat is ready now</div>' +
+      '<div class="insight-body">Even without journal data, ask general trading psychology questions or get help understanding metrics.</div>' +
+    '</div>';
+}
+</script>
+</body>
+</html>
