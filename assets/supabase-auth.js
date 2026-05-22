@@ -166,6 +166,42 @@
       return user ? user.id : null;
     },
 
+    /**
+     * Fetch /api/me — returns role, subscription, and admin flag.
+     * Cached for 60 s so repeated calls don't hammer the API.
+     */
+    async getMe() {
+      if (this._meCache && (Date.now() - this._meCacheTs < 60000)) {
+        return this._meCache;
+      }
+      await _ready;
+      const token = await this.getToken();
+      if (!token) return null;
+      try {
+        const res = await fetch('/api/me', {
+          headers: { 'Authorization': 'Bearer ' + token },
+        });
+        const ct = res.headers.get('content-type') || '';
+        if (!res.ok || !ct.includes('application/json')) return null;
+        const data = await res.json();
+        this._meCache   = data;
+        this._meCacheTs = Date.now();
+        return data;
+      } catch (_) { return null; }
+    },
+
+    /** Returns true if the signed-in user is the app owner/admin. */
+    async isAdmin() {
+      const me = await this.getMe();
+      return !!(me && me.subscription && me.subscription.isAdmin);
+    },
+
+    /** Returns the subscription object (plan, limits, etc). */
+    async getSubscription() {
+      const me = await this.getMe();
+      return me ? me.subscription : null;
+    },
+
     async resetPassword(email) {
       await _ready;
       const redirectTo = location.origin + '/auth/reset.html';

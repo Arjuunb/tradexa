@@ -6,7 +6,8 @@
     { "src": "api/weekly-review.py",   "use": "@vercel/python" },
     { "src": "api/public-config.py",   "use": "@vercel/python" },
     { "src": "api/admin-users.py",     "use": "@vercel/python" },
-    { "src": "api/health.py",          "use": "@vercel/python" }
+    { "src": "api/health.py",          "use": "@vercel/python" },
+    { "src": "api/me.py",              "use": "@vercel/python" }
   ],
   "routes": [
     { "src": "/api/chat",           "dest": "/api/chat.py"   },
@@ -15,6 +16,7 @@
     { "src": "/api/weekly-review",  "dest": "/api/weekly-review.py" },
     { "src": "/api/admin-users",    "dest": "/api/admin-users.py" },
     { "src": "/api/health",         "dest": "/api/health.py" },
+    { "src": "/api/me",             "dest": "/api/me.py" },
     {
       "src": "/(.*)",
       "dest": "/$1"

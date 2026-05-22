@@ -10,6 +10,7 @@ SUPABASE_URL        = os.environ.get('SUPABASE_URL', '')
 SUPABASE_ANON_KEY   = os.environ.get('SUPABASE_ANON_KEY', '')
 SUPABASE_JWT_SECRET = os.environ.get('SUPABASE_JWT_SECRET', '')
 GEMINI_API_KEY      = os.environ.get('GEMINI_API_KEY', '')
+ADMIN_EMAIL         = os.environ.get('ADMIN_EMAIL', '').lower().strip()
 GEMINI_MODEL        = 'gemini-2.5-flash'
 GEMINI_BASE         = f'https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}'
 GEMINI_URL          = f'{GEMINI_BASE}:generateContent'
@@ -74,6 +75,14 @@ def read_json_body(h):
         return json.loads(h.rfile.read(length))
     except Exception:
         return None
+
+
+def is_admin(payload):
+    """Returns True if the JWT payload belongs to the admin email."""
+    if not ADMIN_EMAIL or not payload:
+        return False
+    email = (payload.get('email') or '').lower().strip()
+    return email == ADMIN_EMAIL
 
 
 def auth_or_401(h):
