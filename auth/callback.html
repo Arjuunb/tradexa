@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Signing you in… — Tradexa</title>
+  <meta name="robots" content="noindex"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;background:#0d0f12;font-family:'Inter',sans-serif;color:#F5F5F5;display:flex;align-items:center;justify-content:center;text-align:center}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    .wrap{display:flex;flex-direction:column;align-items:center;gap:16px}
+    .spinner{width:40px;height:40px;border:3px solid rgba(255,183,50,.2);border-top-color:#FFB732;border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    h1{font-size:20px;font-weight:700;color:#fff;letter-spacing:-.03em}
+    p{font-size:13px;color:#A1A1AA}
+    .err{display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:16px 20px;max-width:360px;color:#fca5a5;font-size:13px;line-height:1.6;text-align:left}
+    .err a{color:#FFB732;text-decoration:none}
+    .err a:hover{text-decoration:underline}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="spinner" id="spinner"></div>
+  <h1 id="heading">Completing sign-in…</h1>
+  <p id="sub">Please wait a moment.</p>
+  <div class="err" id="errBox"></div>
+</div>
+<script src="/assets/supabase-auth.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  function showError(msg) {
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('heading').textContent = 'Sign-in failed';
+    document.getElementById('sub').textContent = '';
+    var box = document.getElementById('errBox');
+    box.innerHTML = msg + ' <a href="/auth/login.html">Try again</a>';
+    box.style.display = 'block';
+  }
+
+  TxAuth.ready
+    .then(async function (client) {
+      // Exchange the code/token in the URL for a session
+      const { data, error } = await client.auth.getSession();
+      if (error) {
+        showError(error.message || 'Authentication failed.');
+        return;
+      }
+      if (data && data.session) {
+        TxAuth.runLoginTransition({ user: data.session.user, redirectTo: '/app/dashboard.html' });
+        return;
+      }
+      // No session yet — Supabase may still be processing the hash/code
+      // Listen for the auth state change
+      client.auth.onAuthStateChange(function (event, session) {
+        if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+          TxAuth.runLoginTransition({ user: session.user, redirectTo: '/app/dashboard.html' });
+        }
+      });
+      // Timeout fallback
+      setTimeout(function () {
+        showError('Sign-in timed out. The link may have expired.');
+      }, 12000);
+    })
+    .catch(function (err) {
+      showError(err.message || 'Could not connect to authentication service.');
+    });
+})();
+</script>
+</body>
+</html>

@@ -1,56 +1,7 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "api/chat.py",            "use": "@vercel/python" },
-    { "src": "api/insights.py",        "use": "@vercel/python" },
-    { "src": "api/weekly-review.py",   "use": "@vercel/python" },
-    { "src": "api/public-config.py",   "use": "@vercel/python" },
-    { "src": "api/admin-users.py",     "use": "@vercel/python" },
-    { "src": "api/health.py",          "use": "@vercel/python" },
-    { "src": "api/not_found.py",       "use": "@vercel/python" }
-  ],
-  "routes": [
-    { "src": "/api/chat",           "dest": "/api/chat.py"   },
-    { "src": "/api/public-config",  "dest": "/api/public-config.py" },
-    { "src": "/api/insights",       "dest": "/api/insights.py" },
-    { "src": "/api/weekly-review",  "dest": "/api/weekly-review.py" },
-    { "src": "/api/admin-users",    "dest": "/api/admin-users.py" },
-    { "src": "/api/health",         "dest": "/api/health.py" },
-    { "src": "/api/(.*)",           "dest": "/api/not_found.py" },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
+  "functions": {
+    "api/*.py": {
+      "maxDuration": 10
     }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://generativelanguage.googleapis.com https://*.supabase.co wss://*.supabase.co; frame-src 'self' https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
-        },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-        { "key": "X-XSS-Protection", "value": "1; mode=block" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=()" },
-        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
-        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" }
-      ]
-    },
-    {
-      "source": "/assets/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
-    },
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-store, no-cache" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" }
-      ]
-    }
-  ]
+  }
 }
