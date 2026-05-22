@@ -40,8 +40,11 @@ SUPABASE_JWT_SECRET  = os.environ.get('SUPABASE_JWT_SECRET', '')
 # ──────────────────────────── Supabase JWT verify ────────────────────────────
 
 def _b64url_decode(s):
-    s += '=' * (-len(s) % 4)
-    return base64.urlsafe_b64decode(s)
+    try:
+        s += '=' * (-len(s) % 4)
+        return base64.urlsafe_b64decode(s)
+    except (ValueError, Exception):
+        return None
 
 
 def verify_supabase_jwt(headers):
@@ -54,15 +57,32 @@ def verify_supabase_jwt(headers):
         return None
     token = auth[7:].strip()
     try:
-        h_b64, p_b64, sig_b64 = token.split('.')
+        parts = token.split('.')
+        if len(parts) != 3:
+            return None
+        h_b64, p_b64, sig_b64 = parts
+
         msg = (h_b64 + '.' + p_b64).encode('ascii')
         expected = hmac.new(SUPABASE_JWT_SECRET.encode('utf-8'), msg, hashlib.sha256).digest()
         actual = _b64url_decode(sig_b64)
-        if not hmac.compare_digest(expected, actual): return None
-        if json.loads(_b64url_decode(h_b64)).get('alg') != 'HS256': return None
-        payload = json.loads(_b64url_decode(p_b64))
-        if payload.get('exp', 0) < (time.time() - 5): return None
-        if payload.get('aud') and payload.get('aud') != 'authenticated': return None
+        if actual is None or not hmac.compare_digest(expected, actual):
+            return None
+
+        header_json = _b64url_decode(h_b64)
+        if header_json is None:
+            return None
+        if json.loads(header_json).get('alg') != 'HS256':
+            return None
+
+        payload_json = _b64url_decode(p_b64)
+        if payload_json is None:
+            return None
+        payload = json.loads(payload_json)
+
+        if payload.get('exp', 0) < (time.time() - 5):
+            return None
+        if payload.get('aud') and payload.get('aud') != 'authenticated':
+            return None
         return payload
     except Exception:
         return None
