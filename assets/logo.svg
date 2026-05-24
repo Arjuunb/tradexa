@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="40" viewBox="0 0 160 40">
+  <!-- logo mark: dark rounded square -->
+  <rect x="0" y="4" width="32" height="32" rx="7" fill="#0d0f12"/>
+  <rect x="0" y="4" width="32" height="32" rx="7" fill="none" stroke="#FFB732" stroke-width="1" stroke-opacity="0.4"/>
+  <!-- chart bars -->
+  <rect x="7"  y="22" width="4" height="8"  rx="1" fill="#FFB732" opacity="0.6"/>
+  <rect x="14" y="17" width="4" height="13" rx="1" fill="#FFB732" opacity="0.85"/>
+  <rect x="21" y="12" width="4" height="18" rx="1" fill="#FFB732"/>
+  <!-- trend line -->
+  <polyline points="9,21 16,16 23,11" fill="none" stroke="#FFB732" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- wordmark -->
+  <text x="42" y="27" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="800" letter-spacing="-0.5" fill="#ffffff">Tradexa</text>
+</svg>
